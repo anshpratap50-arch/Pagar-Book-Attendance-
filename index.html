@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pagar Lite</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#111418">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hind:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f7f5; --surface: #ffffff; --ink: #111418; --ink2: #3b4250; --muted: #6b7280;
+    --line: #e7e7e3; --line2: #d9d9d3;
+    --brand: #0f5e57; --brand-2: #137a70; --brand-soft: #e6f2f0;
+    --ok: #15803d; --ok-soft: #e7f5ec; --warn: #a16207; --warn-soft: #faf3dc;
+    --bad: #b42318; --bad-soft: #fbeaea;
+    --r: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1113; --surface: #161a1d; --ink: #f1f3f4; --ink2: #c9cdd2; --muted: #8b939c;
+      --line: #262c31; --line2: #353c43; --brand: #5fb8ae; --brand-2: #7cc8bf; --brand-soft: #1a2e2c;
+      --ok: #4ade80; --ok-soft: #13291b; --warn: #fbbf24; --warn-soft: #2d2510; --bad: #f87171; --bad-soft: #2d1616;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: 'Inter', 'Hind', system-ui, sans-serif; font-size: 14.5px; line-height: 1.45;
+    -webkit-font-smoothing: antialiased; }
+  .app { max-width: 600px; margin: 0 auto; min-height: 100vh; padding: calc(env(safe-area-inset-top,0px) + 16px) 16px 104px; }
+
+  /* top bar */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .logo { width: 34px; height: 34px; border-radius: 9px; background: var(--ink); color: var(--bg);
+    display: grid; place-items: center; font-weight: 700; font-size: 15px; letter-spacing: -.02em; flex: none; }
+  .brand h1 { font-size: 16px; margin: 0; font-weight: 700; letter-spacing: -.015em; }
+  .brand p { margin: 1px 0 0; font-size: 12px; color: var(--muted); }
+  .month { display: flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 3px; }
+  .month span { font-weight: 600; font-size: 13px; min-width: 112px; text-align: center; font-variant-numeric: tabular-nums; }
+
+  /* buttons */
+  button, .btn { font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; border: 1px solid var(--line2); background: var(--surface);
+    color: var(--ink2); border-radius: 9px; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px; text-decoration: none; transition: background .15s, border-color .15s, color .15s; }
+  button:hover, .btn:hover { border-color: var(--ink2); color: var(--ink); }
+  button.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  button.primary:hover { background: var(--brand-2); border-color: var(--brand-2); color: #fff; }
+  button.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+  button.ghost:hover { color: var(--ink); background: var(--line); }
+  button.icon { padding: 5px 9px; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+  /* bottom nav */
+  .nav { position: fixed; left: 0; right: 0; bottom: 0; background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--line);
+    display: flex; justify-content: space-around; padding: 6px 8px calc(env(safe-area-inset-bottom,0px) + 6px); z-index: 5; }
+  .nav button { flex: 1; border: none; background: transparent; flex-direction: column; gap: 4px; font-size: 12px;
+    font-weight: 500; color: var(--muted); padding: 8px 4px; }
+  .nav button:hover { background: transparent; color: var(--ink); }
+  .nav button.on { color: var(--ink); font-weight: 700; }
+  .nav button .dot { width: 18px; height: 2px; border-radius: 2px; background: transparent; }
+  .nav button.on .dot { background: var(--brand); }
+
+  /* cards */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; margin-bottom: 10px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .name { font-weight: 650; font-size: 15px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-size: 12.5px; }
+  .hrs { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  .chip { display: inline-block; font-size: 11px; font-weight: 650; padding: 3px 8px; border-radius: 6px; letter-spacing: .01em; }
+  .chip.ok { background: var(--ok-soft); color: var(--ok); }
+  .chip.due { background: var(--bad-soft); color: var(--bad); }
+  .late { color: var(--bad); font-weight: 600; }
+
+  /* attendance */
+  .toolbar { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 14px; }
+  .status { display: inline-flex; border: 1px solid var(--line2); border-radius: 9px; padding: 2px; gap: 2px; background: var(--bg); }
+  .status button { padding: 6px 0; width: 36px; font-weight: 650; font-size: 12.5px; border: none; background: transparent; border-radius: 7px; }
+  .status button.p.on { background: var(--ok); color: #fff; }
+  .status button.h.on { background: var(--warn); color: #fff; }
+  .status button.a.on { background: var(--bad); color: #fff; }
+  .punch { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .box { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--bg); }
+  .box .lbl { font-size: 10.5px; color: var(--muted); font-weight: 650; text-transform: uppercase; letter-spacing: .06em; }
+  .box .time { font-size: 22px; font-weight: 700; margin: 4px 0 10px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .box button { width: 100%; padding: 8px; background: var(--surface); }
+  .box button.in { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 35%, var(--line2)); }
+  .box button.out { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 35%, var(--line2)); }
+  .box .mini { display: flex; gap: 6px; margin-top: 6px; }
+  .box .mini button { flex: 1; padding: 5px; font-size: 11.5px; font-weight: 500; background: transparent; border-color: transparent; color: var(--muted); }
+  .selfie { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; border: 1px solid var(--line); }
+
+  /* salary */
+  .amt { font-size: 20px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .actions button, .actions .btn { padding: 6px 10px; font-size: 12px; }
+
+  /* report table */
+  .tbl-wrap { overflow-x: auto; margin: 0 -4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 11px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 650; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; }
+  th:first-child, td:first-child { text-align: left; }
+  tfoot td { font-weight: 700; border-bottom: none; color: var(--ink); padding-top: 14px; }
+
+  /* forms */
+  .panel-title { font-size: 11px; font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin: 22px 2px 8px; }
+  .panel-title:first-child { margin-top: 4px; }
+  .form { display: grid; gap: 12px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  label.f { font-size: 12px; color: var(--muted); font-weight: 550; display: grid; gap: 5px; }
+  input, select { font: inherit; padding: 10px 11px; border-radius: 9px; border: 1px solid var(--line2);
+    background: var(--surface); color: var(--ink); width: 100%; font-size: 14px; }
+  input:focus, select:focus { border-color: var(--brand); }
+  .toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink2); font-weight: 550; }
+  .toggle input { width: 16px; height: 16px; padding: 0; accent-color: var(--brand); }
+  .empty { text-align: center; color: var(--muted); padding: 48px 12px; font-size: 13.5px; }
+  .hide { display: none !important; }
+
+  /* slip */
+  .slip-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-bottom: 14px; margin-bottom: 4px; border-bottom: 1px solid var(--ink); }
+  .slip-line { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  .slip-net { display: flex; justify-content: space-between; align-items: baseline; font-size: 20px; font-weight: 700; padding-top: 14px; color: var(--brand); letter-spacing: -.02em; }
+
+  @media print {
+    html, body { background: #fff; color: #000; }
+    body * { visibility: hidden; }
+    #viewSlip, #viewSlip * { visibility: visible; }
+    #viewSlip { position: absolute; left: 0; top: 0; width: 100%; }
+    #viewSlip .card { border: none; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand">
+      <div class="logo">P</div>
+      <div><h1>Pagar Lite</h1><p id="syncStatus">Local data</p></div>
+    </div>
+    <div class="month no-print">
+      <button class="icon ghost" id="prev" aria-label="Pichla mahina">&larr;</button>
+      <span id="monthLabel"></span>
+      <button class="icon ghost" id="next" aria-label="Agla mahina">&rarr;</button>
+    </div>
+  </div>
+
+  <!-- Hazri -->
+  <section id="viewAtt">
+    <div class="toolbar no-print">
+      <select id="dayPick"></select>
+      <button id="markAll">Sab present</button>
+    </div>
+    <div id="attList"></div>
+  </section>
+
+  <!-- Salary -->
+  <section id="viewSal" class="hide"><div id="salList"></div></section>
+
+  <!-- Reports -->
+  <section id="viewRep" class="hide">
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <div><div class="name">Mahine ki report</div><div class="sub" id="repSub"></div></div>
+        <div class="row" style="gap:6px">
+          <button id="csvBtn">CSV</button>
+          <button class="primary" id="repPrint">Print / PDF</button>
+        </div>
+      </div>
+      <div class="tbl-wrap" id="repTable"></div>
+    </div>
+  </section>
+
+  <!-- Slip -->
+  <section id="viewSlip" class="hide"></section>
+
+  <!-- Staff -->
+  <section id="viewStaff" class="hide">
+    <div class="panel-title">Naya staff</div>
+    <form id="staffForm" class="card form">
+      <div class="grid2">
+        <label class="f">Naam<input id="sName" required></label>
+        <label class="f">Phone<input id="sPhone" inputmode="tel"></label>
+      </div>
+      <div class="grid2">
+        <label class="f">Salary ka tareeka
+          <select id="sType">
+            <option value="daily">Rozana (daily)</option>
+            <option value="monthly">Mahina (monthly)</option>
+            <option value="hourly">Ghante (hourly)</option>
+          </select>
+        </label>
+        <label class="f">Rate (₹)<input id="sRate" type="number" min="0" required></label>
+      </div>
+      <div class="grid2">
+        <label class="f">Din mein ghante<input id="sStd" type="number" min="1" value="8"></label>
+        <label class="f">Overtime (₹/ghanta)<input id="sOt" type="number" min="0" value="0"></label>
+        <label class="f">Shift shuru<input id="sShift" type="time"></label>
+        <label class="f">Late jurmana (₹/din)<input id="sLate" type="number" min="0" value="0"></label>
+      </div>
+      <div class="grid2">
+        <label class="toggle"><input type="checkbox" id="sPf"> PF katega (12%)</label>
+        <label class="toggle"><input type="checkbox" id="sEsi"> ESI katega (0.75%)</label>
+      </div>
+      <button class="primary" type="submit">Staff save karein</button>
+    </form>
+
+    <div class="panel-title">Staff list</div>
+    <div id="staffList"></div>
+
+    <div class="panel-title">Data</div>
+    <div class="card">
+      <div class="sub" style="margin-bottom:10px">Phone badalne se pehle backup le lein.</div>
+      <div class="row" style="gap:8px">
+        <button id="bkSave">Backup save karein</button>
+        <label class="btn" style="cursor:pointer">Backup load karein
+          <input type="file" id="bkFile" accept="application/json" hidden>
+        </label>
+      </div>
+    </div>
+    <div class="card">
+      <div class="name" style="margin-bottom:6px">Cloud sync (optional)</div>
+      <div class="sub">Firebase ki settings yahan daalne par ek hi data alag phones par chalega. Abhi ye khaali hai, to sirf is phone par save hota hai. Setup ke liye neeche dekhein.</div>
+    </div>
+  </section>
+</div>
+
+<input type="file" id="photoInput" accept="image/*" capture="user" hidden>
+
+<nav class="nav no-print">
+  <button id="tabAtt" class="on"><span class="dot"></span>Hazri</button>
+  <button id="tabSal"><span class="dot"></span>Salary</button>
+  <button id="tabRep"><span class="dot"></span>Report</button>
+  <button id="tabStaff"><span class="dot"></span>Staff</button>
+</nav>
+
+<script>
+/* ============ CLOUD SYNC (optional) ============
+   Firebase > Project settings > Web app ka config yahan daalein.
+   Khaali chhodne par sync band rahega aur app local mode mein chalega.
+   Firestore mein rules ko test mode ya apne login ke hisaab se set karein. */
+const FIREBASE_CONFIG = null; // jaise: { apiKey: "...", authDomain: "...", projectId: "...", appId: "..." }
+const BUSINESS_ID = 'mera-business'; // sab phones par same rakhein
+
+const KEY = 'pagar-lite-v4';
+const PREV_KEYS = ['pagar-lite-v3', 'pagar-lite-v2', 'pagar-lite-v1'];
+const LATE_GRACE = 10;
+const PF_WAGE_CAP = 15000, PF_RATE = 0.12, ESI_LIMIT = 21000, ESI_EMP = 0.0075, ESI_ER = 0.0325, PF_ER = 0.12;
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const ym = d => d.getFullYear() + '-' + pad(d.getMonth() + 1);
+const todayISO = () => { const d = new Date(); return ym(d) + '-' + pad(d.getDate()); };
+const monthName = d => d.toLocaleDateString('hi-IN', { month: 'long', year: 'numeric' });
+const daysIn = d => new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+const rupee = n => '₹' + Math.round(n).toLocaleString('en-IN');
+const num = n => Math.round(n).toLocaleString('en-IN');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const nowHHMM = () => { const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const fmtHrs = m => Math.floor(m / 60) + 'h ' + pad(m % 60) + 'm';
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const TYPE_LABEL = { daily: 'Rozana', monthly: 'Mahina', hourly: 'Ghante' };
+const RATE_LABEL = { daily: '/ din', monthly: '/ mahina', hourly: '/ ghanta' };
+
+function normalize(s) {
+  s = s || {};
+  s.staff = (s.staff || []).map(x => ({ type: 'daily', rate: 0, stdHrs: 8, otRate: 0, lateFine: 0, shift: '', pf: false, esi: false, ...x }));
+  s.att = s.att || {}; s.paid = s.paid || {}; s.times = s.times || {}; s.adv = s.adv || []; s.photos = s.photos || {};
+  return s;
+}
+
+let state = null;
+try { state = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+if (!state) {
+  for (const k of PREV_KEYS) {
+    try { const o = JSON.parse(localStorage.getItem(k) || 'null'); if (o) { state = o; break; } } catch (e) {}
+  }
+}
+state = normalize(state);
+let cursor = new Date(); cursor.setDate(1);
+let slipId = null;
+let db = null, applyingRemote = false;
+
+const saveLocal = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { alert('Phone mein jagah kam hai. Purani selfies hatayein ya backup lein.'); } };
+const save = () => {
+  saveLocal();
+  if (db && !applyingRemote) db.collection('pagar').doc(BUSINESS_ID).set(state).catch(() => setSync('Sync error', 'due'));
+};
+function setSync(text, cls) { const el = $('syncStatus'); el.textContent = text; el.className = cls || ''; }
+
+/* ---------- calculations ---------- */
+function dayKey(staffId, day) { return ym(cursor) + '-' + pad(day) + '|' + staffId; }
+function getTimes(staffId, day) { return state.times[dayKey(staffId, day)] || {}; }
+function statusOf(staffId, day) {
+  const k = dayKey(staffId, day);
+  if (state.att[k]) return state.att[k];
+  return getTimes(staffId, day).in ? 'p' : '';
+}
+function dayStats(s, day) {
+  const st = statusOf(s.id, day);
+  const t = getTimes(s.id, day);
+  const pres = st === 'p' ? 1 : st === 'h' ? 0.5 : 0;
+  const w = (t.in && t.out) ? Math.max(0, toMin(t.out) - toMin(t.in)) : 0;
+  const std = (s.stdHrs || 8) * 60;
+  const late = !!(t.in && s.shift && toMin(t.in) > toMin(s.shift) + LATE_GRACE);
+  return { st, pres, w, reg: Math.min(w, std), ot: Math.max(0, w - std), late };
+}
+function monthCalc(s) {
+  let pd = 0, mins = 0, reg = 0, ot = 0, late = 0;
+  for (let d = 1; d <= daysIn(cursor); d++) {
+    const x = dayStats(s, d);
+    pd += x.pres; mins += x.w; reg += x.reg; ot += x.ot; if (x.late) late++;
+  }
+  let base = 0;
+  if (s.type === 'daily') base = pd * s.rate;
+  else if (s.type === 'monthly') base = s.rate * pd / daysIn(cursor);
+  else base = reg / 60 * s.rate;
+  const otPay = ot / 60 * (s.otRate || 0);
+  const gross = base + otPay;
+  const lateFine = late * (s.lateFine || 0);
+  const advList = state.adv.filter(a => a.staffId === s.id && a.date.startsWith(ym(cursor)));
+  const adv = advList.reduce((n, a) => n + a.amount, 0);
+  const pfBasis = Math.min(base, PF_WAGE_CAP);
+  const pf = s.pf ? pfBasis * PF_RATE : 0;
+  const esi = (s.esi && gross <= ESI_LIMIT) ? gross * ESI_EMP : 0;
+  const erPf = s.pf ? pfBasis * PF_ER : 0;
+  const erEsi = (s.esi && gross <= ESI_LIMIT) ? gross * ESI_ER : 0;
+  const deductions = lateFine + adv + pf + esi;
+  const net = Math.max(0, gross - deductions);
+  return { pd, mins, ot, late, base, otPay, gross, lateFine, advList, adv, pf, esi, erPf, erEsi, deductions, net };
+}
+
+/* ---------- rendering ---------- */
+function renderMonth() { $('monthLabel').textContent = monthName(cursor); }
+function renderDayPick() {
+  const sel = $('dayPick'), today = new Date(), keep = +sel.value;
+  const isThisMonth = ym(today) === ym(cursor);
+  sel.innerHTML = '';
+  for (let d = 1; d <= daysIn(cursor); d++) {
+    const o = document.createElement('option');
+    o.value = d;
+    o.textContent = d + ' ' + cursor.toLocaleDateString('hi-IN', { month: 'short' });
+    if (keep ? d === keep : (isThisMonth && d === today.getDate())) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+function punchBox(s, day, which) {
+  const t = getTimes(s.id, day)[which];
+  const isIn = which === 'in';
+  const photo = isIn ? state.photos[dayKey(s.id, day)] : null;
+  return `<div class="box">
+    <div class="lbl">${isIn ? 'Aaye' : 'Gaye'}</div>
+    <div class="time">${t || '--:--'}</div>
+    <button class="${isIn ? 'in' : 'out'}" data-punch="${which}" data-id="${s.id}">${isIn ? 'Abhi IN' : 'Abhi OUT'}</button>
+    <div class="mini">
+      ${t ? `<button data-clear="${which}" data-id="${s.id}">Hatayein</button>` : ''}
+      ${isIn ? `<button data-photo="${s.id}">${photo ? '<img class="selfie" src="' + photo + '" alt="">' : 'Selfie'}</button>` : ''}
+    </div>
+  </div>`;
+}
+function renderAtt() {
+  const day = +$('dayPick').value || 1;
+  const list = $('attList');
+  if (!state.staff.length) { list.innerHTML = '<div class="empty">Abhi koi staff nahi hai.<br>Staff tab se naam jodein.</div>'; return; }
+  list.innerHTML = state.staff.map(s => {
+    const x = dayStats(s, day);
+    return `<div class="card">
+      <div class="row">
+        <div><div class="name">${esc(s.name)}</div><div class="sub">${rupee(s.rate)} ${RATE_LABEL[s.type]}</div></div>
+        <div class="status">
+          <button class="p ${x.st==='p'?'on':''}" data-id="${s.id}" data-st="p" aria-label="Present">P</button>
+          <button class="h ${x.st==='h'?'on':''}" data-id="${s.id}" data-st="h" aria-label="Half day">H</button>
+          <button class="a ${x.st==='a'?'on':''}" data-id="${s.id}" data-st="a" aria-label="Absent">A</button>
+        </div>
+      </div>
+      <div class="punch">${punchBox(s, day, 'in')}${punchBox(s, day, 'out')}</div>
+      ${x.w ? `<div class="hrs">Kaam: ${fmtHrs(x.w)}${x.ot ? ' · overtime ' + fmtHrs(x.ot) : ''}</div>` : ''}
+      ${x.late ? `<div class="hrs late">Der se aaye</div>` : ''}
+    </div>`;
+  }).join('');
+}
+function renderSal() {
+  const list = $('salList');
+  if (!state.staff.length) { list.innerHTML = '<div class="empty">Abhi koi staff nahi hai.</div>'; return; }
+  list.innerHTML = state.staff.map(s => {
+    const c = monthCalc(s);
+    const paid = !!state.paid[ym(cursor) + '|' + s.id];
+    const wa = encodeURIComponent(`${s.name} ka ${monthName(cursor)} ka salary: ${rupee(c.net)} (${c.pd} din, ${fmtHrs(c.mins)} kaam)`);
+    return `<div class="card">
+      <div class="row">
+        <div><div class="name">${esc(s.name)}</div><div class="sub">${c.pd} din · ${fmtHrs(c.mins)} kaam · ${TYPE_LABEL[s.type]}</div></div>
+        <div style="text-align:right"><div class="amt">${rupee(c.net)}</div><span class="chip ${paid ? 'ok' : 'due'}">${paid ? 'Paid' : 'Baaki'}</span></div>
+      </div>
+      <div class="sub" style="margin-top:8px">Gross ${rupee(c.gross)}${c.deductions ? ' · Kaat: ' + rupee(c.deductions) : ''}</div>
+      <div class="actions no-print">
+        <button data-pay="${s.id}">${paid ? 'Unpaid karein' : 'Paid mark karein'}</button>
+        <button data-adv="${s.id}">Advance</button>
+        <button data-slip="${s.id}">Slip</button>
+        <a class="btn" href="https://wa.me/${(s.phone||'').replace(/\D/g,'')}?text=${wa}" target="_blank" rel="noopener">WhatsApp</a>
+      </div></div>`;
+  }).join('');
+}
+function renderRep() {
+  $('repSub').textContent = monthName(cursor) + ' ka hisaab';
+  if (!state.staff.length) { $('repTable').innerHTML = '<div class="empty">Staff add karein.</div>'; return; }
+  const rows = state.staff.map(s => ({ s, c: monthCalc(s) }));
+  const tot = k => rows.reduce((n, r) => n + r.c[k], 0);
+  $('repTable').innerHTML = `<table>
+    <thead><tr><th>Naam</th><th>Din</th><th>Ghante</th><th>Gross</th><th>PF</th><th>ESI</th><th>Late</th><th>Adv</th><th>Net</th></tr></thead>
+    <tbody>${rows.map(({ s, c }) => `<tr><td>${esc(s.name)}</td><td>${c.pd}</td><td>${fmtHrs(c.mins)}</td><td>${num(c.gross)}</td><td>${num(c.pf)}</td><td>${num(c.esi)}</td><td>${num(c.lateFine)}</td><td>${num(c.adv)}</td><td>${num(c.net)}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td>Kul</td><td></td><td></td><td>${num(tot('gross'))}</td><td>${num(tot('pf'))}</td><td>${num(tot('esi'))}</td><td>${num(tot('lateFine'))}</td><td>${num(tot('adv'))}</td><td>${num(tot('net'))}</td></tr></tfoot>
+  </table>`;
+}
+function renderSlip() {
+  const box = $('viewSlip');
+  const s = state.staff.find(x => x.id === slipId);
+  if (!s) { box.innerHTML = '<div class="empty">Slip nahi mili.</div>'; return; }
+  const c = monthCalc(s);
+  const line = (label, val) => `<div class="slip-line"><span>${label}</span><span>${val}</span></div>`;
+  const advRows = c.advList.map(a => `<div class="slip-line"><span>Advance ${a.date}${a.note ? ' (' + esc(a.note) + ')' : ''}</span>
+      <span>-${rupee(a.amount)} <button class="no-print" data-advdel="${a.id}" style="padding:3px 8px;font-size:11px">Hatayein</button></span></div>`).join('');
+  box.innerHTML = `<div class="card" style="padding:20px">
+    <div class="slip-head">
+      <div><div class="name" style="font-size:20px">Salary slip</div><div class="sub">${esc(s.name)} · ${monthName(cursor)}</div></div>
+      <div class="sub" style="text-align:right">${esc(s.phone || '')}<br>${TYPE_LABEL[s.type]}</div>
+    </div>
+    ${line('Din present', c.pd + ' din')}
+    ${line('Kaam ke ghante', fmtHrs(c.mins))}
+    ${line('Basic', rupee(c.base))}
+    ${c.otPay ? line('Overtime (' + fmtHrs(c.ot) + ')', rupee(c.otPay)) : ''}
+    ${line('<b>Gross</b>', '<b>' + rupee(c.gross) + '</b>')}
+    ${c.pf ? line('PF (employee 12%)', '-' + rupee(c.pf)) : ''}
+    ${c.esi ? line('ESI (employee 0.75%)', '-' + rupee(c.esi)) : ''}
+    ${c.lateFine ? line('Late kati (' + c.late + ' din)', '-' + rupee(c.lateFine)) : ''}
+    ${advRows}
+    <div class="slip-net"><span>Net salary</span><span>${rupee(c.net)}</span></div>
+    ${(c.erPf || c.erEsi) ? `<div class="sub" style="margin-top:10px">Malik ka hissa: ${c.erPf ? 'PF ' + rupee(c.erPf) : ''}${c.erPf && c.erEsi ? ' · ' : ''}${c.erEsi ? 'ESI ' + rupee(c.erEsi) : ''}</div>` : ''}
+    <div class="row no-print" style="margin-top:16px; gap:8px">
+      <button class="primary" id="printSlip">Print / PDF</button>
+      <button id="closeSlip">Band karein</button>
+    </div>
+  </div>`;
+}
+function renderStaff() {
+  const list = $('staffList');
+  if (!state.staff.length) { list.innerHTML = '<div class="empty">Abhi koi staff nahi hai.</div>'; return; }
+  list.innerHTML = state.staff.map(s => `<div class="card row">
+    <div><div class="name">${esc(s.name)}</div>
+      <div class="sub">${esc(s.phone || 'Phone nahi')} · ${TYPE_LABEL[s.type]} ${rupee(s.rate)} · ${s.stdHrs || 8} ghante${s.otRate ? ' · OT ' + rupee(s.otRate) : ''}${s.shift ? ' · Shift ' + s.shift : ''}${s.pf ? ' · PF' : ''}${s.esi ? ' · ESI' : ''}</div></div>
+    <button class="ghost" data-del="${s.id}">Hatayein</button>
+  </div>`).join('');
+}
+function renderAll() {
+  renderMonth(); renderDayPick(); renderAtt(); renderSal(); renderRep(); renderStaff();
+  if (!$('viewSlip').classList.contains('hide')) renderSlip();
+  save();
+}
+const VIEWS = { att: 'viewAtt', sal: 'viewSal', rep: 'viewRep', staff: 'viewStaff', slip: 'viewSlip' };
+function showView(v) {
+  Object.values(VIEWS).forEach(id => $(id).classList.toggle('hide', id !== VIEWS[v]));
+  ['Att', 'Sal', 'Rep', 'Staff'].forEach(n => $('tab' + n).classList.toggle('on', VIEWS[n.toLowerCase()] === VIEWS[v]));
+}
+
+/* ---------- events ---------- */
+$('tabAtt').onclick = () => { showView('att'); renderAtt(); };
+$('tabSal').onclick = () => { showView('sal'); renderSal(); };
+$('tabRep').onclick = () => { showView('rep'); renderRep(); };
+$('tabStaff').onclick = () => { showView('staff'); renderStaff(); };
+$('prev').onclick = () => { cursor.setMonth(cursor.getMonth() - 1); renderAll(); };
+$('next').onclick = () => { cursor.setMonth(cursor.getMonth() + 1); renderAll(); };
+$('dayPick').onchange = renderAtt;
+
+let photoTarget = null;
+$('attList').onclick = e => {
+  const day = +$('dayPick').value;
+  const st = e.target.closest('button[data-st]');
+  if (st) {
+    const k = dayKey(st.dataset.id, day);
+    if (state.att[k] === st.dataset.st) delete state.att[k]; else state.att[k] = st.dataset.st;
+    return renderAll();
+  }
+  const p = e.target.closest('button[data-punch]');
+  if (p) {
+    const k = dayKey(p.dataset.id, day);
+    state.times[k] = { ...(state.times[k] || {}), [p.dataset.punch]: nowHHMM() };
+    return renderAll();
+  }
+  const c = e.target.closest('button[data-clear]');
+  if (c) {
+    const k = dayKey(c.dataset.id, day);
+    if (state.times[k]) {
+      delete state.times[k][c.dataset.clear];
+      if (!Object.keys(state.times[k]).length) delete state.times[k];
+    }
+    if (c.dataset.clear === 'in') delete state.photos[k];
+    return renderAll();
+  }
+  const ph = e.target.closest('button[data-photo]');
+  if (ph) { photoTarget = dayKey(ph.dataset.photo, day); $('photoInput').click(); }
+};
+
+// selfie: compress to small JPEG so local storage stays light
+$('photoInput').onchange = e => {
+  const f = e.target.files[0];
+  if (!f || !photoTarget) return;
+  const img = new Image();
+  img.onload = () => {
+    const max = 240, scale = Math.min(1, max / Math.max(img.width, img.height));
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(img.width * scale); cv.height = Math.round(img.height * scale);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    state.photos[photoTarget] = cv.toDataURL('image/jpeg', 0.6);
+    photoTarget = null;
+    renderAll();
+  };
+  img.src = URL.createObjectURL(f);
+  e.target.value = '';
+};
+
+$('markAll').onclick = () => {
+  const day = +$('dayPick').value;
+  state.staff.forEach(s => { state.att[dayKey(s.id, day)] = 'p'; });
+  renderAll();
+};
+
+$('salList').onclick = e => {
+  const pay = e.target.closest('button[data-pay]');
+  if (pay) {
+    const k = ym(cursor) + '|' + pay.dataset.pay;
+    if (state.paid[k]) delete state.paid[k]; else state.paid[k] = true;
+    return renderAll();
+  }
+  const adv = e.target.closest('button[data-adv]');
+  if (adv) {
+    const amt = +prompt('Advance kitne rupaye?');
+    if (!amt || amt <= 0) return;
+    const note = prompt('Kis liye? (optional)') || '';
+    const date = ym(cursor) === ym(new Date()) ? todayISO() : ym(cursor) + '-01';
+    state.adv.push({ id: uid(), staffId: adv.dataset.adv, date, amount: amt, note });
+    return renderAll();
+  }
+  const slip = e.target.closest('button[data-slip]');
+  if (slip) { slipId = slip.dataset.slip; showView('slip'); renderSlip(); }
+};
+
+$('viewSlip').onclick = e => {
+  if (e.target.id === 'printSlip') return window.print();
+  if (e.target.id === 'closeSlip') { showView('sal'); return renderSal(); }
+  const d = e.target.closest('button[data-advdel]');
+  if (d && confirm('Ye advance hatayein?')) {
+    state.adv = state.adv.filter(a => a.id !== d.dataset.advdel);
+    renderAll();
+  }
+};
+
+$('csvBtn').onclick = () => {
+  const head = ['Naam', 'Din', 'Ghante', 'Gross', 'PF', 'ESI', 'Late', 'Advance', 'Net'];
+  const rows = state.staff.map(s => {
+    const c = monthCalc(s);
+    return [s.name, c.pd, (c.mins / 60).toFixed(2), Math.round(c.gross), Math.round(c.pf), Math.round(c.esi), Math.round(c.lateFine), Math.round(c.adv), Math.round(c.net)];
+  });
+  const csv = [head, ...rows].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'report-' + ym(cursor) + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+$('repPrint').onclick = () => window.print();
+
+$('staffForm').onsubmit = e => {
+  e.preventDefault();
+  state.staff.push({
+    id: uid(),
+    name: $('sName').value.trim(),
+    phone: $('sPhone').value.trim(),
+    type: $('sType').value,
+    rate: +$('sRate').value,
+    stdHrs: +$('sStd').value || 8,
+    otRate: +$('sOt').value || 0,
+    shift: $('sShift').value,
+    lateFine: +$('sLate').value || 0,
+    pf: $('sPf').checked,
+    esi: $('sEsi').checked
+  });
+  e.target.reset();
+  $('sStd').value = 8; $('sOt').value = 0; $('sLate').value = 0;
+  renderAll();
+  showView('att');
+};
+
+$('staffList').onclick = e => {
+  const b = e.target.closest('button[data-del]');
+  if (!b || !confirm('Is staff ko hata dein?')) return;
+  const id = b.dataset.del;
+  state.staff = state.staff.filter(s => s.id !== id);
+  ['att', 'times', 'photos'].forEach(key => Object.keys(state[key]).forEach(k => { if (k.endsWith('|' + id)) delete state[key][k]; }));
+  state.adv = state.adv.filter(a => a.staffId !== id);
+  renderAll();
+};
+
+$('bkSave').onclick = () => {
+  const blob = new Blob([JSON.stringify(state)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pagar-lite-backup-' + todayISO() + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+$('bkFile').onchange = e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    let data;
+    try { data = JSON.parse(r.result); if (!Array.isArray(data.staff)) throw new Error(); }
+    catch (err) { alert('Ye sahi backup file nahi hai.'); return; }
+    if (!confirm('Ye backup load karein? Abhi ka data badal jayega.')) return;
+    state = normalize(data);
+    renderAll();
+    alert('Backup load ho gaya.');
+  };
+  r.readAsText(f);
+  e.target.value = '';
+};
+
+/* ---------- Firebase (only when FIREBASE_CONFIG is filled) ---------- */
+async function initSync() {
+  if (!FIREBASE_CONFIG) return;
+  try {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.js');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.js');
+    const app = firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore(app);
+    setSync('Sync chalu', 'ok');
+    db.collection('pagar').doc(BUSINESS_ID).onSnapshot(snap => {
+      if (!snap.exists || snap.metadata.hasPendingWrites) return;
+      applyingRemote = true;
+      state = normalize(snap.data());
+      saveLocal();
+      applyingRemote = false;
+      renderAll();
+    });
+  } catch (err) { setSync('Sync band hai', 'due'); }
+}
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+renderAll();
+showView('att');
+if (!FIREBASE_CONFIG) setSync('Local mode', '');
+initSync();
+</script>
+</body>
+</html>
